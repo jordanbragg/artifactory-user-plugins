@@ -111,12 +111,15 @@ def checkDaysPassedForDelete(item, defaultMaxDays) {
     def maxDaysProp = "docker.label.com.jfrog.artifactory.retention.maxDays"
     def oneday = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS)
     def prop = repositories.getProperty(item.repoPath, maxDaysProp)
-    if (!prop && !defaultMaxDays) return false
-    if (defaultMaxDays && defaultMaxDays > 0) return defaultMaxDays
-    log.debug("PROPERTY $maxDaysProp FOUND = $prop IN MANIFEST FILE")
-    prop = prop.isInteger() ? prop.toInteger() : null
-    if (prop == null) return false
-    return ((new Date().time - item.created) / oneday) >= prop
+//    if (!prop && !defaultMaxDays && defaultMaxDays <= 0) return false
+    maxDays = null
+    if (defaultMaxDays && defaultMaxDays > 0) maxDays = defaultMaxDays
+    if (prop != null){
+        log.debug("PROPERTY $maxDaysProp FOUND = $prop IN MANIFEST FILE")
+        maxDays = prop.isInteger() ? prop.toInteger() : maxDays
+    }
+    if (maxDays == null) return false
+    return ((new Date().time - item.created) / oneday) >= maxDays
 }
 
 // This method checks if the docker image's manifest has the property
@@ -124,9 +127,10 @@ def checkDaysPassedForDelete(item, defaultMaxDays) {
 def getMaxCountForDelete(item, defaultMaxCount) {
     def maxCountProp = "docker.label.com.jfrog.artifactory.retention.maxCount"
     def prop = repositories.getProperty(item.repoPath, maxCountProp)
+    maxCount = null
     if (!prop && !defaultMaxCount) return 0
-    if (defaultMaxCount && defaultMaxCount > 0) return defaultMaxCount
+    if (defaultMaxCount && defaultMaxCount > 0) maxCount = defaultMaxCount
     log.debug "PROPERTY $maxCountProp FOUND = $prop IN MANIFEST FILE"
-    prop = prop.isInteger() ? prop.toInteger() : 0
-    return prop > 0 ? prop : 0
+    maxCount = prop.isInteger() ? prop.toInteger() : 0
+    return maxCount > 0 ? maxCount : 0
 }
